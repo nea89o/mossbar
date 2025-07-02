@@ -8,8 +8,10 @@ public class Launch {
     public static void main(String[] args) {
         var rootScope = Scope.root();
         var display = new Display().bindTo(rootScope);
-        var bar = new Bar(display, display.outputs.first).bindTo(rootScope);
-        bar.renderOnce();
+        for (var output : display.outputs) {
+            var bar = new Bar(display, output).bindTo(rootScope);
+            bar.renderOnce();
+        }
         while (display.proxy.dispatch() >= 0) {
         }
 
