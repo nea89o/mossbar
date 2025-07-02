@@ -17,8 +17,7 @@ public class Bar extends Scope {
     private final ShmBufferPool bufferPool;
     private WlCallbackProxy callbackProxy;
 
-
-    public Bar(Display display, WlOutputProxy output) {
+    public Bar(Display display, Output output) {
         this.display = display;
         this.surface = display.compositorProxy.createSurface(new WlSurfaceEventsV6() {
             @Override
@@ -53,12 +52,15 @@ public class Bar extends Scope {
                     public void closed(ZwlrLayerSurfaceV1Proxy emitter) {
                         System.out.println("layer closed");
                     }
-                }, this.surface, output, ZwlrLayerShellV1Layer.OVERLAY.getValue(), "mossbar")
+                }, this.surface, output.proxy, ZwlrLayerShellV1Layer.OVERLAY.getValue(), "mossbar")
                 .bindTo(this);
-        int width = 1920;
+        if (output.width <= 0)
+            throw new IllegalStateException("Monitor with 0 sized output");
+        int width = output.width;
         int height = 30;
         layer.setSize(width, height); // TODO??? this should really not be a hardcoded width
         layer.setAnchor(EnumUtil.encode(EnumSet.of(ZwlrLayerSurfaceV1Anchor.TOP, ZwlrLayerSurfaceV1Anchor.RIGHT, ZwlrLayerSurfaceV1Anchor.LEFT)));
+        layer.setExclusiveZone(height);
         surface.commit();
         try {
             bufferPool = ShmBufferPool.newARGBPool(display, width, height, 2);
@@ -69,7 +71,6 @@ public class Bar extends Scope {
     }
 
     public void renderOnce() {
-        System.out.println("Rendering");
         var nextBuffer = bufferPool.poll();
         assert nextBuffer != null;
         var pixels = nextBuffer.getByteBuffer().asIntBuffer();
@@ -78,7 +79,6 @@ public class Bar extends Scope {
         surface.damage(0, 0, nextBuffer.width, nextBuffer.height);
         queueNextFrame();
         surface.commit();
-        System.out.println("surface committed");
     }
 
     private void queueNextFrame() {

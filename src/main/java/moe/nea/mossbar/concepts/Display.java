@@ -14,12 +14,13 @@ import java.util.Objects;
 
 public class Display extends Scope {
     private final WlDisplayProxy proxy;
-    private final WlRegistryProxy registry;
+    @get
+    final WlRegistryProxy registry;
     private int shmFormat = 0;
     private WlCompositorProxy compositorProxy;
-    private final List<WlOutputProxy> outputs = new ArrayList<>();
+    private final List<Output> outputs = new ArrayList<Output>();
 
-    public List<WlOutputProxy> getOutputs() {
+    public List<Output> getOutputs() {
         return outputs;
     }
 
@@ -96,18 +97,7 @@ public class Display extends Scope {
             case ZwlrLayerShellV1Proxy.INTERFACE_NAME ->
                     Display.this.layerShell = bind(name, ZwlrLayerShellV1Proxy.class, ZwlrLayerShellV1EventsV4.VERSION, new ZwlrLayerShellV1EventsV4() {
                     });
-            case WlOutputProxy.INTERFACE_NAME ->
-                    outputs.add(bind(name, WlOutputProxy.class, WlOutputEvents.VERSION, new WlOutputEvents() {
-                        @Override
-                        public void geometry(WlOutputProxy emitter, int x, int y, int physicalWidth, int physicalHeight, int subpixel, String make, String model, int transform) {
-
-                        }
-
-                        @Override
-                        public void mode(WlOutputProxy emitter, int flags, int width, int height, int refresh) {
-
-                        }
-                    }));
+            case WlOutputProxy.INTERFACE_NAME -> outputs.add(new Output(this, name).bindTo(this));
             case WlSeatProxy.INTERFACE_NAME ->
                     Display.this.seatProxy = bind(name, WlSeatProxy.class, WlSeatEventsV3.VERSION, new WlSeatEventsV3() {
                         @Override
